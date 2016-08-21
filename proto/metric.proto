@@ -1,0 +1,43 @@
+syntax = "proto3";
+package metric;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/fuserobotics/proto/common/common.proto";
+
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
+/* Used to identify a stored metric */
+message MetricIdentifier {
+  /* Use a string identifier for now. */
+  string id = 1;
+}
+
+message MetricSeries {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string kairos_id = 4;
+
+  MetricDataType data_type = 5;
+  repeated MetricTagDescription tag_description = 6;
+
+  enum MetricDataType {
+    NUMBER = 0;
+  }
+
+  message MetricTagDescription {
+    string id = 1;
+    string title = 2;
+    string description = 3;
+  }
+}
+
+message MetricDatapoint {
+  string sensor_set = 1;
+  int32 sensor_id = 2;
+  string metric_name = 3;
+  int64 timestamp = 4;
+  common.GeoLocation location = 5;
+}
