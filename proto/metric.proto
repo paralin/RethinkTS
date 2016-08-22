@@ -20,22 +20,33 @@ message MetricSeries {
   string description = 3;
 
   MetricDataType data_type = 5;
-  map<string, MetricTagDescription> tag_description = 6;
+  map<string, MetricTagMeta> tag_meta = 6;
+  MetricDeduplicationStrategy dedupe_strategy = 7;
 
   enum MetricDataType {
     NUMBER = 0;
   }
 
-  message MetricTagDescription {
+  enum MetricDeduplicationStrategy {
+    NONE = 0;
+
+    // Don't allow two points with same timestamp
+    TIMESTAMP = 1;
+
+    // Create a column with 'nonce', expects all incoming lines to have a nonce hash.
+    NONCE = 2;
+  }
+
+  message MetricTagMeta {
     MetricTagIndexType index = 1;
     string title = 2;
     string description = 3;
-  }
 
-  enum MetricTagIndexType {
-    NONE = 0;
-    STANDARD = 1;
-    GEOPOINT = 2;
+    enum MetricTagIndexType {
+      NONE = 0;
+      STANDARD = 1;
+      GEOPOINT = 2;
+    }
   }
 }
 
