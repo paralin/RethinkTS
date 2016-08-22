@@ -27,9 +27,15 @@ message MetricSeries {
   }
 
   message MetricTagDescription {
-    bool do_index = 1;
+    MetricTagIndexType index = 1;
     string title = 2;
     string description = 3;
+  }
+
+  enum MetricTagIndexType {
+    NONE = 0;
+    STANDARD = 1;
+    GEOPOINT = 2;
   }
 }
 
