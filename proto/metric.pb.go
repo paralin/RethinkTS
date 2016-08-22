@@ -12,6 +12,7 @@
 		MetricIdentifier
 		MetricSeries
 		MetricDatapoint
+		MetricDatapointWithMeta
 */
 package metric
 
@@ -20,6 +21,8 @@ import fmt "fmt"
 import math "math"
 import _ "github.com/gogo/protobuf/gogoproto"
 import common "github.com/fuserobotics/proto/common"
+
+import errors "errors"
 
 import io "io"
 
@@ -64,12 +67,11 @@ func (*MetricIdentifier) ProtoMessage()               {}
 func (*MetricIdentifier) Descriptor() ([]byte, []int) { return fileDescriptorMetric, []int{0} }
 
 type MetricSeries struct {
-	Id             string                               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title          string                               `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description    string                               `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	KairosId       string                               `protobuf:"bytes,4,opt,name=kairos_id,json=kairosId,proto3" json:"kairos_id,omitempty"`
-	DataType       MetricSeries_MetricDataType          `protobuf:"varint,5,opt,name=data_type,json=dataType,proto3,enum=metric.MetricSeries_MetricDataType" json:"data_type,omitempty"`
-	TagDescription []*MetricSeries_MetricTagDescription `protobuf:"bytes,6,rep,name=tag_description,json=tagDescription" json:"tag_description,omitempty"`
+	Id             string                                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title          string                                        `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description    string                                        `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	DataType       MetricSeries_MetricDataType                   `protobuf:"varint,5,opt,name=data_type,json=dataType,proto3,enum=metric.MetricSeries_MetricDataType" json:"data_type,omitempty"`
+	TagDescription map[string]*MetricSeries_MetricTagDescription `protobuf:"bytes,6,rep,name=tag_description,json=tagDescription" json:"tag_description,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value"`
 }
 
 func (m *MetricSeries) Reset()                    { *m = MetricSeries{} }
@@ -77,7 +79,7 @@ func (m *MetricSeries) String() string            { return proto.CompactTextStri
 func (*MetricSeries) ProtoMessage()               {}
 func (*MetricSeries) Descriptor() ([]byte, []int) { return fileDescriptorMetric, []int{1} }
 
-func (m *MetricSeries) GetTagDescription() []*MetricSeries_MetricTagDescription {
+func (m *MetricSeries) GetTagDescription() map[string]*MetricSeries_MetricTagDescription {
 	if m != nil {
 		return m.TagDescription
 	}
@@ -85,7 +87,7 @@ func (m *MetricSeries) GetTagDescription() []*MetricSeries_MetricTagDescription 
 }
 
 type MetricSeries_MetricTagDescription struct {
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	DoIndex     bool   `protobuf:"varint,1,opt,name=do_index,json=doIndex,proto3" json:"do_index,omitempty"`
 	Title       string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 }
@@ -94,15 +96,13 @@ func (m *MetricSeries_MetricTagDescription) Reset()         { *m = MetricSeries_
 func (m *MetricSeries_MetricTagDescription) String() string { return proto.CompactTextString(m) }
 func (*MetricSeries_MetricTagDescription) ProtoMessage()    {}
 func (*MetricSeries_MetricTagDescription) Descriptor() ([]byte, []int) {
-	return fileDescriptorMetric, []int{1, 0}
+	return fileDescriptorMetric, []int{1, 1}
 }
 
 type MetricDatapoint struct {
-	SensorSet  string              `protobuf:"bytes,1,opt,name=sensor_set,json=sensorSet,proto3" json:"sensor_set,omitempty"`
-	SensorId   int32               `protobuf:"varint,2,opt,name=sensor_id,json=sensorId,proto3" json:"sensor_id,omitempty"`
-	MetricName string              `protobuf:"bytes,3,opt,name=metric_name,json=metricName,proto3" json:"metric_name,omitempty"`
-	Timestamp  int64               `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Location   *common.GeoLocation `protobuf:"bytes,5,opt,name=location" json:"location,omitempty"`
+	Timestamp int64               `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Location  *common.GeoLocation `protobuf:"bytes,2,opt,name=location" json:"location,omitempty"`
+	Tags      map[string]string   `protobuf:"bytes,3,rep,name=tags" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (m *MetricDatapoint) Reset()                    { *m = MetricDatapoint{} }
@@ -117,11 +117,43 @@ func (m *MetricDatapoint) GetLocation() *common.GeoLocation {
 	return nil
 }
 
+func (m *MetricDatapoint) GetTags() map[string]string {
+	if m != nil {
+		return m.Tags
+	}
+	return nil
+}
+
+type MetricDatapointWithMeta struct {
+	Datapoint *MetricDatapoint  `protobuf:"bytes,1,opt,name=datapoint" json:"datapoint,omitempty"`
+	Metric    *MetricIdentifier `protobuf:"bytes,2,opt,name=metric" json:"metric,omitempty"`
+}
+
+func (m *MetricDatapointWithMeta) Reset()                    { *m = MetricDatapointWithMeta{} }
+func (m *MetricDatapointWithMeta) String() string            { return proto.CompactTextString(m) }
+func (*MetricDatapointWithMeta) ProtoMessage()               {}
+func (*MetricDatapointWithMeta) Descriptor() ([]byte, []int) { return fileDescriptorMetric, []int{3} }
+
+func (m *MetricDatapointWithMeta) GetDatapoint() *MetricDatapoint {
+	if m != nil {
+		return m.Datapoint
+	}
+	return nil
+}
+
+func (m *MetricDatapointWithMeta) GetMetric() *MetricIdentifier {
+	if m != nil {
+		return m.Metric
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*MetricIdentifier)(nil), "metric.MetricIdentifier")
 	proto.RegisterType((*MetricSeries)(nil), "metric.MetricSeries")
 	proto.RegisterType((*MetricSeries_MetricTagDescription)(nil), "metric.MetricSeries.MetricTagDescription")
 	proto.RegisterType((*MetricDatapoint)(nil), "metric.MetricDatapoint")
+	proto.RegisterType((*MetricDatapointWithMeta)(nil), "metric.MetricDatapointWithMeta")
 	proto.RegisterEnum("metric.MetricSeries_MetricDataType", MetricSeries_MetricDataType_name, MetricSeries_MetricDataType_value)
 }
 func (m *MetricIdentifier) Marshal() (data []byte, err error) {
@@ -181,27 +213,34 @@ func (m *MetricSeries) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintMetric(data, i, uint64(len(m.Description)))
 		i += copy(data[i:], m.Description)
 	}
-	if len(m.KairosId) > 0 {
-		data[i] = 0x22
-		i++
-		i = encodeVarintMetric(data, i, uint64(len(m.KairosId)))
-		i += copy(data[i:], m.KairosId)
-	}
 	if m.DataType != 0 {
 		data[i] = 0x28
 		i++
 		i = encodeVarintMetric(data, i, uint64(m.DataType))
 	}
 	if len(m.TagDescription) > 0 {
-		for _, msg := range m.TagDescription {
+		for k, _ := range m.TagDescription {
 			data[i] = 0x32
 			i++
-			i = encodeVarintMetric(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
+			v := m.TagDescription[k]
+			if v == nil {
+				return 0, errors.New("proto: map has nil element")
+			}
+			msgSize := v.Size()
+			mapSize := 1 + len(k) + sovMetric(uint64(len(k))) + 1 + msgSize + sovMetric(uint64(msgSize))
+			i = encodeVarintMetric(data, i, uint64(mapSize))
+			data[i] = 0xa
+			i++
+			i = encodeVarintMetric(data, i, uint64(len(k)))
+			i += copy(data[i:], k)
+			data[i] = 0x12
+			i++
+			i = encodeVarintMetric(data, i, uint64(v.Size()))
+			n1, err := v.MarshalTo(data[i:])
 			if err != nil {
 				return 0, err
 			}
-			i += n
+			i += n1
 		}
 	}
 	return i, nil
@@ -222,11 +261,15 @@ func (m *MetricSeries_MetricTagDescription) MarshalTo(data []byte) (int, error) 
 	_ = i
 	var l int
 	_ = l
-	if len(m.Id) > 0 {
-		data[i] = 0xa
+	if m.DoIndex {
+		data[i] = 0x8
 		i++
-		i = encodeVarintMetric(data, i, uint64(len(m.Id)))
-		i += copy(data[i:], m.Id)
+		if m.DoIndex {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
 	}
 	if len(m.Title) > 0 {
 		data[i] = 0x12
@@ -258,37 +301,75 @@ func (m *MetricDatapoint) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.SensorSet) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintMetric(data, i, uint64(len(m.SensorSet)))
-		i += copy(data[i:], m.SensorSet)
-	}
-	if m.SensorId != 0 {
-		data[i] = 0x10
-		i++
-		i = encodeVarintMetric(data, i, uint64(m.SensorId))
-	}
-	if len(m.MetricName) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintMetric(data, i, uint64(len(m.MetricName)))
-		i += copy(data[i:], m.MetricName)
-	}
 	if m.Timestamp != 0 {
-		data[i] = 0x20
+		data[i] = 0x8
 		i++
 		i = encodeVarintMetric(data, i, uint64(m.Timestamp))
 	}
 	if m.Location != nil {
-		data[i] = 0x2a
+		data[i] = 0x12
 		i++
 		i = encodeVarintMetric(data, i, uint64(m.Location.Size()))
-		n1, err := m.Location.MarshalTo(data[i:])
+		n2, err := m.Location.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n1
+		i += n2
+	}
+	if len(m.Tags) > 0 {
+		for k, _ := range m.Tags {
+			data[i] = 0x1a
+			i++
+			v := m.Tags[k]
+			mapSize := 1 + len(k) + sovMetric(uint64(len(k))) + 1 + len(v) + sovMetric(uint64(len(v)))
+			i = encodeVarintMetric(data, i, uint64(mapSize))
+			data[i] = 0xa
+			i++
+			i = encodeVarintMetric(data, i, uint64(len(k)))
+			i += copy(data[i:], k)
+			data[i] = 0x12
+			i++
+			i = encodeVarintMetric(data, i, uint64(len(v)))
+			i += copy(data[i:], v)
+		}
+	}
+	return i, nil
+}
+
+func (m *MetricDatapointWithMeta) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *MetricDatapointWithMeta) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Datapoint != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintMetric(data, i, uint64(m.Datapoint.Size()))
+		n3, err := m.Datapoint.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n3
+	}
+	if m.Metric != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintMetric(data, i, uint64(m.Metric.Size()))
+		n4, err := m.Metric.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n4
 	}
 	return i, nil
 }
@@ -345,17 +426,19 @@ func (m *MetricSeries) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovMetric(uint64(l))
 	}
-	l = len(m.KairosId)
-	if l > 0 {
-		n += 1 + l + sovMetric(uint64(l))
-	}
 	if m.DataType != 0 {
 		n += 1 + sovMetric(uint64(m.DataType))
 	}
 	if len(m.TagDescription) > 0 {
-		for _, e := range m.TagDescription {
-			l = e.Size()
-			n += 1 + l + sovMetric(uint64(l))
+		for k, v := range m.TagDescription {
+			_ = k
+			_ = v
+			l = 0
+			if v != nil {
+				l = v.Size()
+			}
+			mapEntrySize := 1 + len(k) + sovMetric(uint64(len(k))) + 1 + l + sovMetric(uint64(l))
+			n += mapEntrySize + 1 + sovMetric(uint64(mapEntrySize))
 		}
 	}
 	return n
@@ -364,9 +447,8 @@ func (m *MetricSeries) Size() (n int) {
 func (m *MetricSeries_MetricTagDescription) Size() (n int) {
 	var l int
 	_ = l
-	l = len(m.Id)
-	if l > 0 {
-		n += 1 + l + sovMetric(uint64(l))
+	if m.DoIndex {
+		n += 2
 	}
 	l = len(m.Title)
 	if l > 0 {
@@ -382,22 +464,33 @@ func (m *MetricSeries_MetricTagDescription) Size() (n int) {
 func (m *MetricDatapoint) Size() (n int) {
 	var l int
 	_ = l
-	l = len(m.SensorSet)
-	if l > 0 {
-		n += 1 + l + sovMetric(uint64(l))
-	}
-	if m.SensorId != 0 {
-		n += 1 + sovMetric(uint64(m.SensorId))
-	}
-	l = len(m.MetricName)
-	if l > 0 {
-		n += 1 + l + sovMetric(uint64(l))
-	}
 	if m.Timestamp != 0 {
 		n += 1 + sovMetric(uint64(m.Timestamp))
 	}
 	if m.Location != nil {
 		l = m.Location.Size()
+		n += 1 + l + sovMetric(uint64(l))
+	}
+	if len(m.Tags) > 0 {
+		for k, v := range m.Tags {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovMetric(uint64(len(k))) + 1 + len(v) + sovMetric(uint64(len(v)))
+			n += mapEntrySize + 1 + sovMetric(uint64(mapEntrySize))
+		}
+	}
+	return n
+}
+
+func (m *MetricDatapointWithMeta) Size() (n int) {
+	var l int
+	_ = l
+	if m.Datapoint != nil {
+		l = m.Datapoint.Size()
+		n += 1 + l + sovMetric(uint64(l))
+	}
+	if m.Metric != nil {
+		l = m.Metric.Size()
 		n += 1 + l + sovMetric(uint64(l))
 	}
 	return n
@@ -611,35 +704,6 @@ func (m *MetricSeries) Unmarshal(data []byte) error {
 			}
 			m.Description = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field KairosId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMetric
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthMetric
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.KairosId = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DataType", wireType)
@@ -685,10 +749,95 @@ func (m *MetricSeries) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.TagDescription = append(m.TagDescription, &MetricSeries_MetricTagDescription{})
-			if err := m.TagDescription[len(m.TagDescription)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+			var keykey uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				keykey |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			var stringLenmapkey uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLenmapkey |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLenmapkey := int(stringLenmapkey)
+			if intStringLenmapkey < 0 {
+				return ErrInvalidLengthMetric
+			}
+			postStringIndexmapkey := iNdEx + intStringLenmapkey
+			if postStringIndexmapkey > l {
+				return io.ErrUnexpectedEOF
+			}
+			mapkey := string(data[iNdEx:postStringIndexmapkey])
+			iNdEx = postStringIndexmapkey
+			var valuekey uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				valuekey |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			var mapmsglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				mapmsglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if mapmsglen < 0 {
+				return ErrInvalidLengthMetric
+			}
+			postmsgIndex := iNdEx + mapmsglen
+			if mapmsglen < 0 {
+				return ErrInvalidLengthMetric
+			}
+			if postmsgIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			mapvalue := &MetricSeries_MetricTagDescription{}
+			if err := mapvalue.Unmarshal(data[iNdEx:postmsgIndex]); err != nil {
 				return err
 			}
+			iNdEx = postmsgIndex
+			if m.TagDescription == nil {
+				m.TagDescription = make(map[string]*MetricSeries_MetricTagDescription)
+			}
+			m.TagDescription[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -741,10 +890,10 @@ func (m *MetricSeries_MetricTagDescription) Unmarshal(data []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DoIndex", wireType)
 			}
-			var stringLen uint64
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowMetric
@@ -754,21 +903,12 @@ func (m *MetricSeries_MetricTagDescription) Unmarshal(data []byte) error {
 				}
 				b := data[iNdEx]
 				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
+				v |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthMetric
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Id = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
+			m.DoIndex = bool(v != 0)
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
@@ -878,83 +1018,6 @@ func (m *MetricDatapoint) Unmarshal(data []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SensorSet", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMetric
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthMetric
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SensorSet = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SensorId", wireType)
-			}
-			m.SensorId = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMetric
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				m.SensorId |= (int32(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MetricName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMetric
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthMetric
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.MetricName = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
 			}
@@ -973,7 +1036,7 @@ func (m *MetricDatapoint) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		case 5:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Location", wireType)
 			}
@@ -1003,6 +1066,233 @@ func (m *MetricDatapoint) Unmarshal(data []byte) error {
 				m.Location = &common.GeoLocation{}
 			}
 			if err := m.Location.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tags", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMetric
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var keykey uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				keykey |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			var stringLenmapkey uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLenmapkey |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLenmapkey := int(stringLenmapkey)
+			if intStringLenmapkey < 0 {
+				return ErrInvalidLengthMetric
+			}
+			postStringIndexmapkey := iNdEx + intStringLenmapkey
+			if postStringIndexmapkey > l {
+				return io.ErrUnexpectedEOF
+			}
+			mapkey := string(data[iNdEx:postStringIndexmapkey])
+			iNdEx = postStringIndexmapkey
+			var valuekey uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				valuekey |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			var stringLenmapvalue uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLenmapvalue |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLenmapvalue := int(stringLenmapvalue)
+			if intStringLenmapvalue < 0 {
+				return ErrInvalidLengthMetric
+			}
+			postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+			if postStringIndexmapvalue > l {
+				return io.ErrUnexpectedEOF
+			}
+			mapvalue := string(data[iNdEx:postStringIndexmapvalue])
+			iNdEx = postStringIndexmapvalue
+			if m.Tags == nil {
+				m.Tags = make(map[string]string)
+			}
+			m.Tags[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMetric(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthMetric
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MetricDatapointWithMeta) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMetric
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MetricDatapointWithMeta: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MetricDatapointWithMeta: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Datapoint", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMetric
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Datapoint == nil {
+				m.Datapoint = &MetricDatapoint{}
+			}
+			if err := m.Datapoint.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metric", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetric
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMetric
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metric == nil {
+				m.Metric = &MetricIdentifier{}
+			}
+			if err := m.Metric.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1133,32 +1423,37 @@ var (
 )
 
 var fileDescriptorMetric = []byte{
-	// 423 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x52, 0x4f, 0x6f, 0xd3, 0x30,
-	0x14, 0xa7, 0x2b, 0xad, 0x9a, 0xd7, 0xa9, 0x9b, 0xcc, 0x0e, 0x55, 0x19, 0x50, 0x85, 0xcb, 0x38,
-	0x90, 0x88, 0xc2, 0x07, 0x40, 0xd3, 0x10, 0x9a, 0xc4, 0x76, 0xf0, 0xc6, 0x95, 0xc8, 0x49, 0x5e,
-	0x33, 0x6b, 0x4b, 0x1c, 0xd9, 0xaf, 0x07, 0x3e, 0x01, 0x9f, 0x8a, 0x3b, 0x47, 0x3e, 0x02, 0xe2,
-	0x93, 0xe0, 0xd8, 0x16, 0x4d, 0x11, 0x70, 0xda, 0x21, 0xca, 0xfb, 0xfd, 0x79, 0xf6, 0xcf, 0xcf,
-	0x86, 0x37, 0x95, 0xa4, 0x9b, 0x4d, 0x9e, 0x14, 0xaa, 0x4e, 0xd7, 0x1b, 0x83, 0x5a, 0xe5, 0x8a,
-	0x64, 0x61, 0x52, 0x8d, 0x74, 0x23, 0x9b, 0x5b, 0x32, 0x69, 0xab, 0x15, 0xa9, 0xb4, 0x46, 0xd2,
-	0xb2, 0x48, 0x1c, 0x60, 0x63, 0x8f, 0x16, 0x2f, 0x7b, 0xdd, 0x95, 0xaa, 0x94, 0xf7, 0xe6, 0x9b,
-	0xb5, 0x43, 0xbe, 0xb1, 0xab, 0x7c, 0xdb, 0xe2, 0xd5, 0xbf, 0x36, 0xf3, 0x4e, 0x4b, 0xd7, 0xaa,
-	0x09, 0x3f, 0xdf, 0x12, 0xc7, 0x70, 0x78, 0xe1, 0xf6, 0x3a, 0x2f, 0xb1, 0x21, 0xb9, 0x96, 0xa8,
-	0xd9, 0x0c, 0xf6, 0x64, 0x39, 0x1f, 0x2c, 0x07, 0x27, 0x11, 0xb7, 0x55, 0xfc, 0x65, 0x08, 0xfb,
-	0xde, 0x74, 0x85, 0x5a, 0xa2, 0xf9, 0xd3, 0xc0, 0x8e, 0x60, 0x44, 0x92, 0xee, 0x70, 0xbe, 0xe7,
-	0x28, 0x0f, 0xd8, 0x12, 0xa6, 0x25, 0x9a, 0x42, 0xcb, 0x96, 0xa4, 0x6a, 0xe6, 0x43, 0xa7, 0xf5,
-	0x29, 0xf6, 0x18, 0xa2, 0x5b, 0x21, 0xb5, 0x32, 0x99, 0x5d, 0xee, 0xa1, 0xd3, 0x27, 0x9e, 0x38,
-	0x2f, 0xd9, 0x5b, 0x88, 0x4a, 0x41, 0x22, 0xa3, 0xcf, 0x2d, 0xce, 0x47, 0x56, 0x9c, 0xad, 0x9e,
-	0x27, 0x61, 0x4a, 0xfd, 0x34, 0x01, 0x9c, 0x59, 0xef, 0xb5, 0xb5, 0xf2, 0x49, 0x19, 0x2a, 0xc6,
-	0xe1, 0x80, 0x44, 0x95, 0xf5, 0x43, 0x8c, 0x97, 0xc3, 0x93, 0xe9, 0xea, 0xc5, 0x7f, 0xd6, 0xb9,
-	0x16, 0xd5, 0xd9, 0xb6, 0x81, 0xcf, 0x68, 0x07, 0x2f, 0x3e, 0xc1, 0xd1, 0xdf, 0x7c, 0xf7, 0x35,
-	0x92, 0xf8, 0x18, 0x66, 0xbb, 0xe7, 0x61, 0x00, 0xe3, 0xcb, 0x8f, 0x17, 0xa7, 0xef, 0xf8, 0xe1,
-	0x83, 0xf8, 0xeb, 0x00, 0x0e, 0xb6, 0x72, 0xab, 0x64, 0x43, 0xec, 0x09, 0x80, 0xc1, 0xc6, 0x28,
-	0x9d, 0x19, 0xa4, 0x90, 0x20, 0xf2, 0xcc, 0x15, 0x52, 0x37, 0xe3, 0x20, 0xdb, 0x7c, 0x5d, 0x98,
-	0x11, 0x9f, 0x78, 0xc2, 0xce, 0xf8, 0x19, 0x4c, 0xfd, 0x24, 0xb2, 0x46, 0xd4, 0x18, 0xf2, 0x80,
-	0xa7, 0x2e, 0x2d, 0xc3, 0x8e, 0x21, 0x22, 0x59, 0xa3, 0x21, 0x51, 0xb7, 0xee, 0x86, 0x86, 0x7c,
-	0x4b, 0xb0, 0x14, 0x26, 0x77, 0xaa, 0x10, 0xee, 0x2c, 0xdd, 0x0d, 0x4d, 0x57, 0x8f, 0x92, 0xf0,
-	0xba, 0xde, 0xa3, 0xfa, 0x10, 0x24, 0xfe, 0xdb, 0x74, 0xba, 0xff, 0xed, 0xe7, 0xd3, 0xc1, 0x77,
-	0xfb, 0xfd, 0xb0, 0x5f, 0x3e, 0x76, 0x4f, 0xf0, 0xf5, 0xaf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x46,
-	0x98, 0x1a, 0x07, 0x24, 0x03, 0x00, 0x00,
+	// 497 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x53, 0xcd, 0x6e, 0xd3, 0x40,
+	0x10, 0xc6, 0x09, 0x09, 0xf1, 0xa4, 0x4a, 0xa3, 0x6d, 0xa4, 0x1a, 0xab, 0x42, 0xc1, 0x5c, 0xc2,
+	0x81, 0x18, 0x02, 0x08, 0xc4, 0x05, 0x54, 0xb5, 0x42, 0x95, 0x28, 0x12, 0x4b, 0x11, 0xc7, 0xc8,
+	0xb1, 0x37, 0xee, 0xaa, 0xb1, 0xd7, 0xb2, 0x27, 0x88, 0x5c, 0x79, 0x3a, 0x8e, 0x7d, 0x04, 0xd4,
+	0x27, 0x61, 0xbd, 0xbb, 0x8a, 0xed, 0x2a, 0xe5, 0xc0, 0xc1, 0xf2, 0xce, 0x37, 0xdf, 0xfc, 0xec,
+	0x37, 0x3b, 0xf0, 0x2a, 0xe6, 0x78, 0xb9, 0x5e, 0x4c, 0x43, 0x91, 0xf8, 0xcb, 0x75, 0xc1, 0x72,
+	0xb1, 0x10, 0xc8, 0xc3, 0xc2, 0xcf, 0x19, 0x5e, 0xf2, 0xf4, 0x0a, 0x0b, 0x3f, 0xcb, 0x05, 0x0a,
+	0x3f, 0x61, 0x98, 0xf3, 0x70, 0xaa, 0x0c, 0xd2, 0xd5, 0x96, 0xfb, 0xac, 0x16, 0x1d, 0x8b, 0x58,
+	0x68, 0xee, 0x62, 0xbd, 0x54, 0x96, 0x0e, 0x2c, 0x4f, 0x3a, 0xcc, 0x7d, 0x71, 0x57, 0x31, 0xcd,
+	0x94, 0x70, 0x22, 0x52, 0xf3, 0xd3, 0x21, 0x9e, 0x07, 0xc3, 0x73, 0x55, 0xeb, 0x2c, 0x62, 0x29,
+	0xf2, 0x25, 0x67, 0x39, 0x19, 0x40, 0x8b, 0x47, 0x8e, 0x35, 0xb6, 0x26, 0x36, 0x95, 0x27, 0xef,
+	0xa6, 0x0d, 0x7b, 0x9a, 0xf4, 0x95, 0xe5, 0x9c, 0x15, 0xb7, 0x09, 0x64, 0x04, 0x1d, 0xe4, 0xb8,
+	0x62, 0x4e, 0x4b, 0x41, 0xda, 0x20, 0x63, 0xe8, 0x47, 0xac, 0x08, 0x73, 0x9e, 0x21, 0x17, 0xa9,
+	0xd3, 0x56, 0xbe, 0x3a, 0x44, 0x3e, 0x80, 0x1d, 0x05, 0x18, 0xcc, 0x71, 0x93, 0x31, 0xa7, 0x23,
+	0xfd, 0x83, 0xd9, 0x93, 0xa9, 0x11, 0xa2, 0x5e, 0xd0, 0x18, 0x27, 0x92, 0x7b, 0x21, 0xa9, 0xb4,
+	0x17, 0x99, 0x13, 0xf9, 0x02, 0xfb, 0x18, 0xc4, 0xf3, 0x7a, 0x9d, 0xee, 0xb8, 0x3d, 0xe9, 0xcf,
+	0x26, 0x3b, 0xf3, 0x5c, 0x04, 0xf1, 0x49, 0x45, 0x3d, 0x4d, 0x31, 0xdf, 0xd0, 0x01, 0x36, 0x40,
+	0x77, 0x05, 0x07, 0x3b, 0x68, 0x64, 0x08, 0xed, 0x2b, 0xb6, 0x31, 0x97, 0x2e, 0x8f, 0xe4, 0x3d,
+	0x74, 0x7e, 0x04, 0xab, 0xb5, 0xbe, 0x75, 0x7f, 0xf6, 0xf4, 0x1f, 0x9d, 0x37, 0x13, 0x52, 0x1d,
+	0xf7, 0xae, 0xf5, 0xd6, 0x72, 0x39, 0x8c, 0x76, 0x51, 0xc8, 0x43, 0xe8, 0x45, 0x62, 0xce, 0xd3,
+	0x88, 0xfd, 0x54, 0x35, 0x7b, 0xf4, 0x41, 0x24, 0xce, 0x4a, 0xf3, 0x7f, 0xd5, 0xf6, 0x8e, 0x60,
+	0xd0, 0xd4, 0x91, 0x00, 0x74, 0x3f, 0x7f, 0x3b, 0x3f, 0x3e, 0xa5, 0xc3, 0x7b, 0xde, 0xb5, 0x05,
+	0xfb, 0x95, 0x3b, 0x13, 0x3c, 0x45, 0x72, 0x04, 0x36, 0xf2, 0x84, 0x15, 0x18, 0x24, 0x99, 0xea,
+	0xa2, 0x4d, 0x2b, 0x80, 0xf8, 0xd0, 0x5b, 0x89, 0x30, 0x50, 0xe5, 0xb4, 0x04, 0x07, 0x53, 0xf3,
+	0xb6, 0x3e, 0x32, 0xf1, 0xc9, 0xb8, 0xe8, 0x96, 0x44, 0x5e, 0xc3, 0x7d, 0xa9, 0x75, 0x21, 0x7b,
+	0x2b, 0x27, 0xf4, 0xb8, 0xa9, 0xd7, 0xb6, 0x6a, 0x39, 0xa4, 0x42, 0x8f, 0x46, 0xd1, 0xdd, 0x37,
+	0x60, 0x6f, 0xa1, 0x1d, 0x63, 0x18, 0xd5, 0xc7, 0x60, 0xd7, 0xb4, 0xf5, 0x7e, 0x59, 0x70, 0x78,
+	0x2b, 0xf9, 0x77, 0xb9, 0x20, 0x12, 0x0a, 0x64, 0x2f, 0xea, 0xe9, 0x29, 0x50, 0x65, 0xeb, 0xcf,
+	0x0e, 0xef, 0x68, 0x88, 0x56, 0x4c, 0xf2, 0x1c, 0xcc, 0x6a, 0x9a, 0x1b, 0x3b, 0xcd, 0x98, 0x6a,
+	0x89, 0xa8, 0xe1, 0x1d, 0xef, 0xfd, 0xbe, 0x79, 0x64, 0x5d, 0xcb, 0xef, 0x8f, 0xfc, 0x16, 0x5d,
+	0xb5, 0x75, 0x2f, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0x01, 0x9e, 0x3a, 0x61, 0x17, 0x04, 0x00,
+	0x00,
 }
