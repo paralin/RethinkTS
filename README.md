@@ -19,16 +19,27 @@ There is a server in this repo that hosts a few services:
 Design
 ======
 
-Each metric series gets its own table.
+Each metric series gets its own table. There is a table to list the actual metric series metadata keyed by ID.
+
+When the server is started it must be provided with a RethinkDB database name and optionally an override for the prefix for table names for metrics. It also must be provided with the table name for the list of metrics and metric metadata.
 
 These are the types of requests to implement:
 
- - [ ] Record datapoint
+ - [x] Record datapoint
  - [ ] List / stream datapoints with various queries
  - [ ] Aggregate datapoints, cache aggregations (redis?)
+ - [ ] List metrics, create metrics, etc
 
 When a request comes in, a MetricContext is built. This context contains:
 
  - RethinkDB session
  - RethinkDB database reference
  - RethinkDB table reference
+
+Potential Problems
+==================
+
+What happens when:
+
+ - We can't record a datapoint - just return an error and allow the caller to retry?
+ - Timestamp is really old - how do we prevent desynced clocks from messing things up?

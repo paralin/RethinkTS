@@ -1,0 +1,70 @@
+syntax = "proto3";
+package metric;
+
+import "google/api/annotations.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/fuserobotics/rethinkts/metric/metric.proto";
+
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
+message RequestContext {
+  metric.MetricIdentifier identifier = 1;
+}
+
+message RecordDatapointRequest {
+  RequestContext context = 1;
+  metric.MetricDatapoint datapoint = 2;
+}
+
+message RecordDatapointResponse {
+  // How many were recorded in this session?
+  int32 num_recorded = 1;
+  // How many were rejected (invalid, duplicate)?
+  repeated metric.MetricDatapoint rejected = 2;
+}
+
+message ListDatapointRequest {
+  bool tail = 1;
+  metric.MetricDatapointQuery query = 2;
+  RequestContext context = 3;
+  bool include_initial = 4;
+}
+
+message ListDatapointResponse {
+  ListDatapointResponseType response_type = 1;
+  // Null for first message in the response
+  metric.MetricDatapoint datapoint = 2;
+  // Only sent once, subsequent messages will be null on this field
+  metric.MetricSeries series = 3;
+
+  enum ListDatapointResponseType {
+    LIST_DATAPOINT_SERIES_DETAILS = 0;
+    // Tailing: datapoint added / changed
+    LIST_DATAPOINT_ADD = 1;
+    // Tailing: datapoint removed
+    LIST_DATAPOINT_DEL = 2;
+    // Tailing: point updated
+    LIST_DATAPOINT_REPLACE = 3;
+  }
+}
+
+service MetricService {
+  // Record datapoint calls
+  rpc RecordDatapoint(RecordDatapointRequest) returns (RecordDatapointResponse) {
+    option (google.api.http) = {
+      post: "/v1/datapoint/record"
+      body: "*"
+    };
+  }
+  rpc RecordDatapointStream(stream RecordDatapointRequest) returns (RecordDatapointResponse);
+
+  // List datapoint calls
+  rpc ListDatapoint(ListDatapointRequest) returns (stream ListDatapointResponse) {
+    option (google.api.http) = {
+      post: "/v1/datapoint/list"
+      body: "*"
+    };
+  }
+}

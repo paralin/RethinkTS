@@ -1,0 +1,325 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "github.com/fuserobotics/rethinkts/metric/metric-service.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/datapoint/list": {
+      "post": {
+        "operationId": "ListDatapoint",
+        "responses": {
+          "200": {
+            "description": "(streaming responses)",
+            "schema": {
+              "$ref": "#/definitions/metricListDatapointResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/metricListDatapointRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MetricService"
+        ]
+      }
+    },
+    "/v1/datapoint/record": {
+      "post": {
+        "summary": "Record datapoint calls",
+        "operationId": "RecordDatapoint",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/metricRecordDatapointResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/metricRecordDatapointRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MetricService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ListDatapointResponseListDatapointResponseType": {
+      "type": "string",
+      "enum": [
+        "LIST_DATAPOINT_SERIES_DETAILS",
+        "LIST_DATAPOINT_ADD",
+        "LIST_DATAPOINT_DEL",
+        "LIST_DATAPOINT_REPLACE"
+      ],
+      "default": "LIST_DATAPOINT_SERIES_DETAILS",
+      "description": "- LIST_DATAPOINT_ADD: Tailing: datapoint added / changed\n - LIST_DATAPOINT_DEL: Tailing: datapoint removed\n - LIST_DATAPOINT_REPLACE: Tailing: point updated"
+    },
+    "MetricDatapointQueryMetricDatapointTagConstraint": {
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MetricDatapointTagConstraintMetricDatapointTagConstraintTag"
+          }
+        }
+      }
+    },
+    "MetricDatapointQueryMetricDatapointTimeConstraint": {
+      "type": "object",
+      "properties": {
+        "max_time": {
+          "type": "string",
+          "format": "int64",
+          "title": "If zero, ignored"
+        },
+        "min_time": {
+          "type": "string",
+          "format": "int64",
+          "title": "If zero, ignored"
+        }
+      }
+    },
+    "MetricDatapointTagConstraintMetricDatapointTagConstraintTag": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "string"
+          },
+          "title": "List of acceptable values"
+        }
+      }
+    },
+    "MetricSeriesMetricDataType": {
+      "type": "string",
+      "enum": [
+        "NUMBER"
+      ],
+      "default": "NUMBER"
+    },
+    "MetricSeriesMetricDeduplicationStrategy": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "NONCE"
+      ],
+      "default": "NONE",
+      "description": "- NONE: Don't allow two points with same timestamp by default\n - NONCE: Create a column with 'nonce', expects all incoming lines to have a nonce hash."
+    },
+    "MetricSeriesMetricTagMeta": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "format": "string"
+        },
+        "index": {
+          "$ref": "#/definitions/MetricTagMetaMetricTagIndexType"
+        },
+        "title": {
+          "type": "string",
+          "format": "string"
+        }
+      }
+    },
+    "MetricTagMetaMetricTagIndexType": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "STANDARD",
+        "GEOPOINT"
+      ],
+      "default": "NONE"
+    },
+    "commonGeoLocation": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "title": "Equivilent to Point in RethinkDB"
+    },
+    "metricListDatapointRequest": {
+      "type": "object",
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/metricRequestContext"
+        },
+        "include_initial": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "query": {
+          "$ref": "#/definitions/metricMetricDatapointQuery"
+        },
+        "tail": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "metricListDatapointResponse": {
+      "type": "object",
+      "properties": {
+        "datapoint": {
+          "$ref": "#/definitions/metricMetricDatapoint",
+          "title": "Null for first message in the response"
+        },
+        "response_type": {
+          "$ref": "#/definitions/ListDatapointResponseListDatapointResponseType"
+        },
+        "series": {
+          "$ref": "#/definitions/metricMetricSeries",
+          "title": "Only sent once, subsequent messages will be null on this field"
+        }
+      }
+    },
+    "metricMetricDatapoint": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/commonGeoLocation"
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "format": "string"
+          }
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "metricMetricDatapointQuery": {
+      "type": "object",
+      "properties": {
+        "tag_constraint": {
+          "$ref": "#/definitions/MetricDatapointQueryMetricDatapointTagConstraint"
+        },
+        "time_constraint": {
+          "$ref": "#/definitions/MetricDatapointQueryMetricDatapointTimeConstraint"
+        }
+      },
+      "title": "Various ways to query a series"
+    },
+    "metricMetricIdentifier": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "string",
+          "description": "Use a string identifier for now."
+        }
+      },
+      "title": "Used to identify a stored metric"
+    },
+    "metricMetricSeries": {
+      "type": "object",
+      "properties": {
+        "data_type": {
+          "$ref": "#/definitions/MetricSeriesMetricDataType"
+        },
+        "dedupe_strategy": {
+          "$ref": "#/definitions/MetricSeriesMetricDeduplicationStrategy"
+        },
+        "description": {
+          "type": "string",
+          "format": "string"
+        },
+        "id": {
+          "type": "string",
+          "format": "string"
+        },
+        "tag_meta": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MetricSeriesMetricTagMeta"
+          }
+        },
+        "title": {
+          "type": "string",
+          "format": "string"
+        }
+      }
+    },
+    "metricRecordDatapointRequest": {
+      "type": "object",
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/metricRequestContext"
+        },
+        "datapoint": {
+          "$ref": "#/definitions/metricMetricDatapoint"
+        }
+      }
+    },
+    "metricRecordDatapointResponse": {
+      "type": "object",
+      "properties": {
+        "num_recorded": {
+          "type": "integer",
+          "format": "int32",
+          "title": "How many were recorded in this session?"
+        },
+        "rejected": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metricMetricDatapoint"
+          },
+          "title": "How many were rejected (invalid, duplicate)?"
+        }
+      }
+    },
+    "metricRequestContext": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "$ref": "#/definitions/metricMetricIdentifier"
+        }
+      }
+    }
+  }
+}

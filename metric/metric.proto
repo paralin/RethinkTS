@@ -1,0 +1,83 @@
+syntax = "proto3";
+package metric;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/fuserobotics/proto/common/common.proto";
+
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
+/* Used to identify a stored metric */
+message MetricIdentifier {
+  /* Use a string identifier for now. */
+  string id = 1;
+}
+
+message MetricSeries {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+
+  MetricDataType data_type = 5;
+  map<string, MetricTagMeta> tag_meta = 6;
+  MetricDeduplicationStrategy dedupe_strategy = 7;
+
+  enum MetricDataType {
+    NUMBER = 0;
+  }
+
+  enum MetricDeduplicationStrategy {
+    // Don't allow two points with same timestamp by default
+    NONE = 0;
+
+    // Create a column with 'nonce', expects all incoming lines to have a nonce hash.
+    NONCE = 1;
+  }
+
+  message MetricTagMeta {
+    MetricTagIndexType index = 1;
+    string title = 2;
+    string description = 3;
+
+    enum MetricTagIndexType {
+      NONE = 0;
+      STANDARD = 1;
+      GEOPOINT = 2;
+    }
+  }
+}
+
+message MetricDatapoint {
+  int64 timestamp = 1;
+  common.GeoLocation location = 2;
+  map<string, string> tags = 3;
+  double value = 4;
+}
+
+message MetricDatapointWithMeta {
+  MetricDatapoint datapoint = 1;
+  MetricIdentifier metric = 2;
+}
+
+// Various ways to query a series
+message MetricDatapointQuery {
+  MetricDatapointTimeConstraint time_constraint = 1;
+  MetricDatapointTagConstraint  tag_constraint  = 2;
+
+  message MetricDatapointTimeConstraint {
+    // If zero, ignored
+    int64 min_time = 1;
+    // If zero, ignored
+    int64 max_time = 2;
+  }
+
+  message MetricDatapointTagConstraint {
+    map<string, MetricDatapointTagConstraintTag> tags = 1;
+
+    message MetricDatapointTagConstraintTag {
+      // List of acceptable values
+      repeated string value = 1;
+    }
+  }
+}
