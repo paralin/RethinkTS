@@ -57,6 +57,31 @@
         ]
       }
     },
+    "/v1/metric/{context.identifier.id}": {
+      "get": {
+        "operationId": "GetMetric",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/metricGetMetricResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "context.identifier.id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          }
+        ],
+        "tags": [
+          "MetricService"
+        ]
+      }
+    },
     "/v1/metric/{context.identifier.id}/datapoint": {
       "get": {
         "operationId": "ListDatapoint",
@@ -237,6 +262,22 @@
         }
       }
     },
+    "metricGetMetricRequest": {
+      "type": "object",
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/metricRequestContext"
+        }
+      }
+    },
+    "metricGetMetricResponse": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "$ref": "#/definitions/metricMetricSeries"
+        }
+      }
+    },
     "metricListDatapointRequest": {
       "type": "object",
       "properties": {
@@ -262,6 +303,11 @@
         "datapoint": {
           "$ref": "#/definitions/metricMetricDatapoint",
           "title": "Null for first message in the response"
+        },
+        "initial_set": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "If in initial set of data, true"
         },
         "response_type": {
           "$ref": "#/definitions/ListDatapointResponseListDatapointResponseType"
@@ -304,8 +350,11 @@
           "format": "int64"
         },
         "value": {
-          "type": "number",
-          "format": "double"
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
         }
       }
     },

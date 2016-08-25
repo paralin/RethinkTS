@@ -52,7 +52,7 @@ message MetricDatapoint {
   int64 timestamp = 1;
   common.GeoLocation location = 2;
   map<string, string> tags = 3;
-  double value = 4;
+  map<string, double> value = 4;
 }
 
 message MetricDatapointWithMeta {

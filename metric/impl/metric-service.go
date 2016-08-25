@@ -76,7 +76,7 @@ func (ms *metricServer) ListDatapoint(in *metric.ListDatapointRequest, stream me
 	}
 
 	if in.Query == nil {
-		return errors.New("Query cannot be nil.")
+		in.Query = &metric.MetricDatapointQuery{}
 	}
 
 	{
@@ -94,6 +94,7 @@ func (ms *metricServer) ListDatapoint(in *metric.ListDatapointRequest, stream me
 	if in.Tail {
 		query = query.Changes(r.ChangesOpts{
 			IncludeInitial: in.IncludeInitial,
+			IncludeStates:  true,
 		})
 
 		cursor, err := query.Run(ctx.RethinkConnection)
@@ -104,6 +105,7 @@ func (ms *metricServer) ListDatapoint(in *metric.ListDatapointRequest, stream me
 
 		change := make(chan r.ChangeResponse)
 		cursor.Listen(change)
+		initialSet := true
 
 		for {
 			select {
@@ -113,9 +115,14 @@ func (ms *metricServer) ListDatapoint(in *metric.ListDatapointRequest, stream me
 				if !ok {
 					return nil
 				}
+				if ch.State != "" {
+					initialSet = ch.State == "initializing"
+					break
+				}
 				var updateType metric.ListDatapointResponse_ListDatapointResponseType
 				dp := &metric.ListDatapointResponse{}
 				dp.Datapoint = &metric.MetricDatapoint{}
+				dp.InitialSet = initialSet
 				if ch.NewValue != nil {
 					if ch.OldValue != nil {
 						updateType = metric.ListDatapointResponse_LIST_DATAPOINT_REPLACE
@@ -189,6 +196,24 @@ func (ms *metricServer) ListMetric(nctx netctx.Context, in *metric.ListMetricReq
 	}
 
 	return &metric.ListMetricResponse{
+		Metric: result,
+	}, nil
+}
+
+func (ms *metricServer) GetMetric(nctx netctx.Context, in *metric.GetMetricRequest) (*metric.GetMetricResponse, error) {
+	query := ms.BaseContext.RethinkDataTable.Get(in.Context.Identifier.Id)
+	cursor, err := query.Run(ms.BaseContext.RethinkConnection)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close()
+
+	var result *metric.MetricSeries
+	if err := cursor.One(result); err != nil {
+		return nil, err
+	}
+
+	return &metric.GetMetricResponse{
 		Metric: result,
 	}, nil
 }

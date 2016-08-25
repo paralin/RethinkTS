@@ -38,6 +38,8 @@ message ListDatapointResponse {
   metric.MetricDatapoint datapoint = 2;
   // Only sent once, subsequent messages will be null on this field
   metric.MetricSeries series = 3;
+  // If in initial set of data, true
+  bool initial_set = 4;
 
   enum ListDatapointResponseType {
     LIST_DATAPOINT_SERIES_DETAILS = 0;
@@ -62,6 +64,14 @@ message CreateMetricRequest {
 }
 
 message CreateMetricResponse {
+  metric.MetricSeries metric = 1;
+}
+
+message GetMetricRequest {
+  RequestContext context = 1;
+}
+
+message GetMetricResponse {
   metric.MetricSeries metric = 1;
 }
 
@@ -93,6 +103,12 @@ service MetricService {
     option (google.api.http) = {
       post: "/v1/metric"
       body: "metric"
+    };
+  }
+
+  rpc GetMetric(GetMetricRequest) returns (GetMetricResponse) {
+    option (google.api.http) = {
+      get: "/v1/metric/{context.identifier.id}"
     };
   }
 }
