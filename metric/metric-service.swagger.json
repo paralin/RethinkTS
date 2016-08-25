@@ -15,8 +15,50 @@
     "application/json"
   ],
   "paths": {
-    "/v1/datapoint/list": {
+    "/v1/metric": {
+      "get": {
+        "summary": "List datapoint calls",
+        "operationId": "ListMetric",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/metricListMetricResponse"
+            }
+          }
+        },
+        "tags": [
+          "MetricService"
+        ]
+      },
       "post": {
+        "summary": "List metrics calls",
+        "operationId": "CreateMetric",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/metricCreateMetricResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/metricCreateMetricRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MetricService"
+        ]
+      }
+    },
+    "/v1/metric/{context.identifier.id}/datapoint": {
+      "get": {
         "operationId": "ListDatapoint",
         "responses": {
           "200": {
@@ -28,20 +70,17 @@
         },
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
+            "name": "context.identifier.id",
+            "in": "path",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/metricListDatapointRequest"
-            }
+            "type": "string",
+            "format": "string"
           }
         ],
         "tags": [
           "MetricService"
         ]
-      }
-    },
-    "/v1/datapoint/record": {
+      },
       "post": {
         "summary": "Record datapoint calls",
         "operationId": "RecordDatapoint",
@@ -54,6 +93,13 @@
           }
         },
         "parameters": [
+          {
+            "name": "context.identifier.id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          },
           {
             "name": "body",
             "in": "body",
@@ -175,6 +221,22 @@
       },
       "title": "Equivilent to Point in RethinkDB"
     },
+    "metricCreateMetricRequest": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "$ref": "#/definitions/metricMetricSeries"
+        }
+      }
+    },
+    "metricCreateMetricResponse": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "$ref": "#/definitions/metricMetricSeries"
+        }
+      }
+    },
     "metricListDatapointRequest": {
       "type": "object",
       "properties": {
@@ -207,6 +269,20 @@
         "series": {
           "$ref": "#/definitions/metricMetricSeries",
           "title": "Only sent once, subsequent messages will be null on this field"
+        }
+      }
+    },
+    "metricListMetricRequest": {
+      "type": "object"
+    },
+    "metricListMetricResponse": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/metricMetricSeries"
+          }
         }
       }
     },

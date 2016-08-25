@@ -26,9 +26,9 @@ When the server is started it must be provided with a RethinkDB database name an
 These are the types of requests to implement:
 
  - [x] Record datapoint
- - [ ] List / stream datapoints with various queries
+ - [x] List / stream datapoints with various queries
  - [ ] Aggregate datapoints, cache aggregations (redis?)
- - [ ] List metrics, create metrics, etc
+ - [x] List metrics, create metrics, etc
 
 When a request comes in, a MetricContext is built. This context contains:
 
@@ -43,3 +43,12 @@ What happens when:
 
  - We can't record a datapoint - just return an error and allow the caller to retry?
  - Timestamp is really old - how do we prevent desynced clocks from messing things up?
+
+HTTP Queries
+============
+
+For GET requests you can put the request object in the query string, for example:
+
+``
+/v1/metric/test.battery/datapoint?include_initial=true&query.time_constraint.min_time=50&tail=true
+```

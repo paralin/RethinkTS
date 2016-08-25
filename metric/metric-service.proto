@@ -50,12 +50,27 @@ message ListDatapointResponse {
   }
 }
 
+message ListMetricRequest {
+}
+
+message ListMetricResponse {
+  repeated metric.MetricSeries metric = 1;
+}
+
+message CreateMetricRequest {
+  metric.MetricSeries metric = 1;
+}
+
+message CreateMetricResponse {
+  metric.MetricSeries metric = 1;
+}
+
 service MetricService {
   // Record datapoint calls
   rpc RecordDatapoint(RecordDatapointRequest) returns (RecordDatapointResponse) {
     option (google.api.http) = {
-      post: "/v1/datapoint/record"
-      body: "*"
+      post: "/v1/metric/{context.identifier.id}/datapoint"
+      body: "datapoint"
     };
   }
   rpc RecordDatapointStream(stream RecordDatapointRequest) returns (RecordDatapointResponse);
@@ -63,8 +78,21 @@ service MetricService {
   // List datapoint calls
   rpc ListDatapoint(ListDatapointRequest) returns (stream ListDatapointResponse) {
     option (google.api.http) = {
-      post: "/v1/datapoint/list"
-      body: "*"
+      get: "/v1/metric/{context.identifier.id}/datapoint"
+    };
+  }
+
+  // List metrics calls
+  rpc ListMetric(ListMetricRequest) returns (ListMetricResponse) {
+    option (google.api.http) = {
+      get: "/v1/metric"
+    };
+  }
+
+  rpc CreateMetric(CreateMetricRequest) returns (CreateMetricResponse) {
+    option (google.api.http) = {
+      post: "/v1/metric"
+      body: "metric"
     };
   }
 }

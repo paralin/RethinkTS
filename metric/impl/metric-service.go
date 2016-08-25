@@ -175,6 +175,38 @@ func (ms *metricServer) ListDatapoint(in *metric.ListDatapointRequest, stream me
 	return nil
 }
 
+func (ms *metricServer) ListMetric(nctx netctx.Context, in *metric.ListMetricRequest) (*metric.ListMetricResponse, error) {
+	query := ms.BaseContext.RethinkDataTable
+	cursor, err := query.Run(ms.BaseContext.RethinkConnection)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close()
+
+	var result []*metric.MetricSeries
+	if err := cursor.All(&result); err != nil {
+		return nil, err
+	}
+
+	return &metric.ListMetricResponse{
+		Metric: result,
+	}, nil
+}
+
+func (ms *metricServer) CreateMetric(nctx netctx.Context, in *metric.CreateMetricRequest) (*metric.CreateMetricResponse, error) {
+	if err := in.Metric.Validate(); err != nil {
+		return nil, err
+	}
+
+	_, err := ms.BaseContext.RethinkDataTable.Insert(in.Metric).RunWrite(ms.BaseContext.RethinkConnection)
+	if err != nil {
+		return nil, err
+	}
+	return &metric.CreateMetricResponse{
+		Metric: in.Metric,
+	}, nil
+}
+
 func RegisterServer(ctx *context.MetricContext, grpcServer *grpc.Server) {
 	metric.RegisterMetricServiceServer(grpcServer, &metricServer{
 		BaseContext: *ctx,
