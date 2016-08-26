@@ -21,6 +21,7 @@
 		CreateMetricResponse
 		GetMetricRequest
 		GetMetricResponse
+		GeoLocation
 		MetricIdentifier
 		MetricSeries
 		MetricDatapoint

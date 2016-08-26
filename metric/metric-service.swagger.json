@@ -232,20 +232,6 @@
       ],
       "default": "NONE"
     },
-    "commonGeoLocation": {
-      "type": "object",
-      "properties": {
-        "latitude": {
-          "type": "number",
-          "format": "double"
-        },
-        "longitude": {
-          "type": "number",
-          "format": "double"
-        }
-      },
-      "title": "Equivilent to Point in RethinkDB"
-    },
     "metricCreateMetricRequest": {
       "type": "object",
       "properties": {
@@ -261,6 +247,20 @@
           "$ref": "#/definitions/metricMetricSeries"
         }
       }
+    },
+    "metricGeoLocation": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "title": "Equivilent to Point in RethinkDB"
     },
     "metricGetMetricRequest": {
       "type": "object",
@@ -336,7 +336,7 @@
       "type": "object",
       "properties": {
         "location": {
-          "$ref": "#/definitions/commonGeoLocation"
+          "$ref": "#/definitions/metricGeoLocation"
         },
         "tags": {
           "type": "object",

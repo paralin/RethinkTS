@@ -2,11 +2,18 @@ syntax = "proto3";
 package metric;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "github.com/fuserobotics/proto/common/common.proto";
 
 option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
+
+// Equivilent to Point in RethinkDB
+message GeoLocation {
+  double latitude = 1;
+  double longitude = 2;
+  // reserved 3
+  // reserved 4
+}
 
 /* Used to identify a stored metric */
 message MetricIdentifier {
@@ -50,7 +57,7 @@ message MetricSeries {
 
 message MetricDatapoint {
   int64 timestamp = 1;
-  common.GeoLocation location = 2;
+  GeoLocation location = 2;
   map<string, string> tags = 3;
   map<string, double> value = 4;
 }
