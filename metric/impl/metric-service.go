@@ -116,7 +116,13 @@ func (ms *metricServer) ListDatapoint(in *metric.ListDatapointRequest, stream me
 					return nil
 				}
 				if ch.State != "" {
+					oldInitialSet := initialSet
 					initialSet = ch.State == "initializing"
+					if oldInitialSet && !initialSet {
+						stream.Send(&metric.ListDatapointResponse{
+							ResponseType: metric.ListDatapointResponse_LIST_DATAPOINT_INITIAL_SET_COMPLETE,
+						})
+					}
 					break
 				}
 				var updateType metric.ListDatapointResponse_ListDatapointResponseType

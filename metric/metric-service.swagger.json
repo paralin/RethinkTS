@@ -147,10 +147,11 @@
         "LIST_DATAPOINT_SERIES_DETAILS",
         "LIST_DATAPOINT_ADD",
         "LIST_DATAPOINT_DEL",
-        "LIST_DATAPOINT_REPLACE"
+        "LIST_DATAPOINT_REPLACE",
+        "LIST_DATAPOINT_INITIAL_SET_COMPLETE"
       ],
       "default": "LIST_DATAPOINT_SERIES_DETAILS",
-      "description": "- LIST_DATAPOINT_ADD: Tailing: datapoint added / changed\n - LIST_DATAPOINT_DEL: Tailing: datapoint removed\n - LIST_DATAPOINT_REPLACE: Tailing: point updated"
+      "description": "- LIST_DATAPOINT_ADD: Tailing: datapoint added / changed\n - LIST_DATAPOINT_DEL: Tailing: datapoint removed\n - LIST_DATAPOINT_REPLACE: Tailing: point updated\n - LIST_DATAPOINT_INITIAL_SET_COMPLETE: Tailing: initial set complete"
     },
     "MetricDatapointQueryMetricDatapointTagConstraint": {
       "type": "object",

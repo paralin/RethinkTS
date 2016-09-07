@@ -49,6 +49,8 @@ message ListDatapointResponse {
     LIST_DATAPOINT_DEL = 2;
     // Tailing: point updated
     LIST_DATAPOINT_REPLACE = 3;
+    // Tailing: initial set complete
+    LIST_DATAPOINT_INITIAL_SET_COMPLETE = 4;
   }
 }
 
