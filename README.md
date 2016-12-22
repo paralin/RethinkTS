@@ -3,6 +3,8 @@ RethinkDB Time Series
 
 RethinkTS is a distributed engine to collect, buffer, and store time series data in RethinkDB.
 
+Note: this codebase has been abandoned in favor of my State Stream project.
+
 Storage
 =======
 
