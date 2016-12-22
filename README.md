@@ -44,11 +44,3 @@ What happens when:
  - We can't record a datapoint - just return an error and allow the caller to retry?
  - Timestamp is really old - how do we prevent desynced clocks from messing things up?
 
-HTTP Queries
-============
-
-For GET requests you can put the request object in the query string, for example:
-
-``
-/v1/metric/test.battery/datapoint?include_initial=true&query.time_constraint.min_time=50&tail=true
-```

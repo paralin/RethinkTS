@@ -1,7 +1,7 @@
 package context
 
 import (
-	proto "github.com/fuserobotics/rethinkts/metric"
+	proto "github.com/paralin/rethinkts/metric"
 	r "gopkg.in/dancannon/gorethink.v2"
 )
 

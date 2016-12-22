@@ -4,9 +4,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/fuserobotics/rethinkts/context"
-	"github.com/fuserobotics/rethinkts/metric"
-	"github.com/fuserobotics/rethinkts/rql"
+	"github.com/paralin/rethinkts/context"
+	"github.com/paralin/rethinkts/metric"
+	"github.com/paralin/rethinkts/rql"
 	"github.com/mitchellh/mapstructure"
 	netctx "golang.org/x/net/context"
 	"google.golang.org/grpc"

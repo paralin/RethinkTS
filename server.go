@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
-	rtctx "github.com/fuserobotics/rethinkts/context"
-	gw "github.com/fuserobotics/rethinkts/metric"
-	gwimpl "github.com/fuserobotics/rethinkts/metric/impl"
+	rtctx "github.com/paralin/rethinkts/context"
+	gw "github.com/paralin/rethinkts/metric"
+	gwimpl "github.com/paralin/rethinkts/metric/impl"
 	"github.com/golang/glog"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"

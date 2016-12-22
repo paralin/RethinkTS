@@ -3,8 +3,8 @@ package rql
 import (
 	"errors"
 
-	"github.com/fuserobotics/rethinkts/context"
-	"github.com/fuserobotics/rethinkts/metric"
+	"github.com/paralin/rethinkts/context"
+	"github.com/paralin/rethinkts/metric"
 )
 
 func CheckDuplicate(dp *metric.MetricDatapoint, ctx *context.MetricContext) error {

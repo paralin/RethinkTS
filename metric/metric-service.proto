@@ -2,12 +2,7 @@ syntax = "proto3";
 package metric;
 
 import "google/api/annotations.proto";
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "github.com/fuserobotics/rethinkts/metric/metric.proto";
-
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.sizer_all) = true;
+import "github.com/paralin/rethinkts/metric/metric.proto";
 
 message RequestContext {
   metric.MetricIdentifier identifier = 1;

@@ -3,8 +3,8 @@ package context
 import (
 	"errors"
 
-	"github.com/fuserobotics/rethinkts/metric"
-	"github.com/fuserobotics/rethinkts/util"
+	"github.com/paralin/rethinkts/metric"
+	"github.com/paralin/rethinkts/util"
 	r "gopkg.in/dancannon/gorethink.v2"
 )
 

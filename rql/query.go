@@ -1,8 +1,8 @@
 package rql
 
 import (
-	"github.com/fuserobotics/rethinkts/context"
-	"github.com/fuserobotics/rethinkts/metric"
+	"github.com/paralin/rethinkts/context"
+	"github.com/paralin/rethinkts/metric"
 	r "gopkg.in/dancannon/gorethink.v2"
 )
 
